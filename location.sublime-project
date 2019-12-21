@@ -1,0 +1,25 @@
+{
+	"folders":
+	[
+		{
+			"path": "."
+		}
+	],
+	"settings":{
+	    "ClangFormat": {
+			"format_on_save": true
+		}
+	},
+	"build_systems":
+    [
+    	{
+    		"name":"default_ninja",
+    		"osx" : {
+						"shell_cmd": "ninja",
+						"file_regex": "(...*?):([0-9]*):([0-9]*):",
+						"working_dir": "${project_path}"
+					}
+		},
+	]
+
+}
