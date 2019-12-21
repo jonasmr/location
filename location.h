@@ -1,11 +1,6 @@
 #pragma once
 #include <stdint.h>
 
-void* objc_create(int age, const char* name);
-void objc_delete(void* p);
-void objc_fuzz(void* p, int v);
-void start_run_loop();
-
 enum ELocationFlags
 {
 	ELOC_DEBUG_TRACE = 0x1,
