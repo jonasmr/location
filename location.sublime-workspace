@@ -4,6 +4,14 @@
 		"selected_items":
 		[
 			[
+				"verso",
+				"versionNumber"
+			],
+			[
+				"Progra",
+				"ProgramFilesx84"
+			],
+			[
 				"MicroProfileCharacterMask",
 				"MicroProfileCharacterMaskString"
 			]
@@ -11,6 +19,84 @@
 	},
 	"buffers":
 	[
+		{
+			"file": "location.sublime-project",
+			"settings":
+			{
+				"buffer_size": 472,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "/C/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/um/winnt.h",
+			"settings":
+			{
+				"buffer_size": 733471,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "location_win32.cpp",
+			"settings":
+			{
+				"buffer_size": 6056,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "test.cpp",
+			"settings":
+			{
+				"buffer_size": 573,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "ngen.py",
+			"settings":
+			{
+				"buffer_size": 6596,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "build.ninja",
+			"settings":
+			{
+				"buffer_size": 2301,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "ngen.cfg",
+			"settings":
+			{
+				"buffer_size": 2188,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "/D/git/ogre2/build/rules.ninja",
+			"settings":
+			{
+				"buffer_size": 26644,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "location.h",
+			"settings":
+			{
+				"buffer_size": 536,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		}
 	],
 	"build_system": "",
 	"build_system_choices":
@@ -148,6 +234,13 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"path",
+			";",
+			"editand",
+			"builddir",
+			"cxx =",
+			"\\",
+			"subprocess"
 		],
 		"highlight": true,
 		"in_selection": false,
