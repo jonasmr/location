@@ -85,6 +85,7 @@ def RunVSWhere():
 		# Process = subprocess.run(Path, stdout=subprocess.PIPE, text=True)
 		# lines = Process.stdout.split("\n")
 		for line in lines:
+			print("Line " + line)
 			line = line.strip()
 			idx = line.find(":")
 			if idx > 0:
