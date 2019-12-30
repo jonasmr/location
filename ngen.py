@@ -79,8 +79,11 @@ def RunVSWhere():
 		ProgramFilesx84 = os.getenv("ProgramFiles(x86)");
 		Path = "\"%s\\Microsoft Visual Studio\\Installer\\vswhere.exe\"" % (ProgramFilesx84);
 		print(Path)
-		Process = subprocess.run(Path, stdout=subprocess.PIPE, text=True)
-		lines = Process.stdout.split("\n")
+		Process = subprocess.Popen(Path, stdout=subprocess.PIPE, text=True)
+		out, err = Process.communicate()
+		lines = out.splitlines()
+		# Process = subprocess.run(Path, stdout=subprocess.PIPE, text=True)
+		# lines = Process.stdout.split("\n")
 		for line in lines:
 			line = line.strip()
 			idx = line.find(":")
