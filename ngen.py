@@ -85,12 +85,13 @@ def RunVSWhere():
 		# Process = subprocess.run(Path, stdout=subprocess.PIPE, text=True)
 		# lines = Process.stdout.split("\n")
 		for line in lines:
-			print("Line " + line)
-			line = line.strip()
-			idx = line.find(":")
+			l = line.decode('utf-8')
+			print("Line " + l)
+			l = l.strip()
+			idx = l.find(":")
 			if idx > 0:
-				key = line[:idx]
-				value = line[idx+2:]
+				key = l[:idx]
+				value = l[idx+2:]
 				Result[key] = value
 	return Result;
 
