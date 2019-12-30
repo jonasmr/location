@@ -22,6 +22,16 @@ paramz = {};
 print("plat " + sys.platform + " os " + os.name)
 
 g_platform = sys.platform
+g_win32sdk = ""
+g_win32InstallationPath = ""
+g_win32VersionPath = ""
+g_win32VCVersionNumber = ""
+g_win32sdkInclude = ""
+g_win32sdkLib = "" 
+g_win32CLPath = "";
+g_win32LinkPath = "";
+g_win32VCPath = ""
+
 
 paths_processed = set()
 
@@ -80,25 +90,17 @@ def RunVSWhere():
 				Result[key] = value
 	return Result;
 
-vswhere = RunVSWhere()
-installationPath = ""
-versionPath = ""
-versionNumber = ""
+g_vswhere = RunVSWhere()
 if g_platform == "win32":
-	installationPath = vswhere["installationPath"]
-	versionPath = "%s\VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt" % installationPath
-	with open(versionPath) as f:
-		versionNumber = ''.join(f.read().split())
-def PlatformGetPath(id):
-	ret = "";
-	if id == "cl":
-		ret = "%s\\VC\\Tools\\MSVC\\%s\\bin\\HostX64\\x64\\cl.exe" % (installationPath, versionNumber)
-	elif id == "link":
-		ret = "%s\\VC\\Tools\\MSVC\\%s\\bin\\HostX64\\x64\\link.exe" % (installationPath, versionNumber)
-	return ret
+	g_win32InstallationPath = g_vswhere["installationPath"]
+	g_win32VersionPath = "%s\\VC\\Auxiliary\\Build\\Microsoft.VCToolsVersion.default.txt" % g_win32InstallationPath
+	with open(g_win32VersionPath) as f:
+		g_win32VCVersionNumber = ''.join(f.read().split())
 
-clPath = PlatformGetPath("cl")
-linkPath = PlatformGetPath("link")
+g_win32CLPath = "%s\\VC\\Tools\\MSVC\\%s\\bin\\HostX64\\x64\\cl.exe" % (g_win32InstallationPath, g_win32VCVersionNumber)
+g_win32LinkPath = "%s\\VC\\Tools\\MSVC\\%s\\bin\\HostX64\\x64\\link.exe" % (g_win32InstallationPath, g_win32VCVersionNumber)
+g_win32VCPath = "%s\\VC\\Tools\\MSVC\\%s" % (g_win32InstallationPath, g_win32VCVersionNumber)
+
 
 def ProcessPath(d):
 	abspth = os.path.abspath(d)
@@ -113,7 +115,7 @@ def ProcessPath(d):
 				if PlatformMatch(platform):
 					if extension == "cpp":
 						cpps.add(p)
-						print("CPP " + p)
+						print("cpp " + p)
 					if extension == "mm":
 						mms.add(p)
 						print("mm " + p)
@@ -136,6 +138,16 @@ def fixname(name, ext):
 	objname = "$builddir/" + raw
 	return objname, name
 
+def AddParam(Param, V):
+	print("--> '" + Param + "' '" + V +"'")
+	value = paramz.get(Param, "");
+	l1 = value
+	value = value + " " + V;
+	paramz[Param] = value;
+	
+
+
+
 with open("ngen.cfg") as f:
 	for line in f:
 		line = line.strip()
@@ -145,11 +157,18 @@ with open("ngen.cfg") as f:
 				idx = command.find(' ')
 				arg = command[idx+1:].strip()
 				command = command[:idx]
+				print("COMMAND!! " + command)
+				if command == "win32sdk":
+					if g_platform == "win32":
+						g_win32sdk = arg
+						print("win32 SDK: " + g_win32sdk)
 				if(command == "dir"):
 					ProcessPath(arg)
 				if(command == "target"):
 					target = arg.strip()
-					targets.add(arg.strip())
+					if g_platform == "win32":
+						target = target + ".exe"
+					targets.add(target)
 			else:
 				idx = re.search(r'[ =]', line).start()
 				i = line.find('=')
@@ -158,20 +177,29 @@ with open("ngen.cfg") as f:
 					l1 = line[i+1:].strip()
 					l0, platform = SplitCommand(l0)					
 					if PlatformMatch(platform):
-						value = paramz.get(l0, "");
-						value = value + " " + l1;
-						paramz[l0] = value;
-						print("'" + l0 + "' :: '" + l1 +"'"+ "--> '" + l0 + "' '" + value +"'")
+						AddParam(l0, l1);
 
+
+if g_win32sdk != "":
+	g_win32sdkInclude = "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\%s" % g_win32sdk
+	g_win32sdkLib = "C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\%s" % g_win32sdk
+	AddParam("cflags", "-I\"%s\\include\"" % g_win32VCPath)
+	AddParam("cflags", "-I\"%s\\atlmfc\\include\"" % g_win32VCPath)
+	AddParam("cflags", "-I\"%s\\ucrt\"" % g_win32sdkInclude)
+	AddParam("cflags", "-I\"%s\\um\"" % g_win32sdkInclude)
+	AddParam("cflags", "-I\"%s\\shared\"" % g_win32sdkInclude)
+	AddParam("ldflags", "/LIBPATH:\"%s\\ucrt\\x64\"" % g_win32sdkLib);
+	AddParam("ldflags", "/LIBPATH:\"%s\\um\\x64\"" % g_win32sdkLib);
+	AddParam("ldflags", "/LIBPATH:\"%s\\lib\\x64\"" % g_win32VCPath)
 
 with open("build.ninja", "w") as f:
 	if g_platform == "win32":
-		f.write("cxx = " + clPath + "\n")
+		f.write("cxx = " + g_win32CLPath + "\n")
 	else:
 		f.write("cxx = clang++\n")
 	
 	if g_platform == "win32":
-		f.write("link = " + linkPath + "\n")
+		f.write("link = " + g_win32LinkPath + "\n")
 
 	for key,value in paramz.items():
 		f.write( "%s = %s\n\n" % (key.strip(), value.strip()))
@@ -225,7 +253,7 @@ with open("build.ninja", "w") as f:
 
 """)
 		f.write("""rule link
-  command = $link $ldflags /OUT:$out.exe $in $libs
+  command = $link $ldflags /OUT:$out $in $libs
   description = LINK $out
 
 """)
