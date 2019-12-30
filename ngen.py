@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import subprocess
+import time
 # - multiple targets
 # - multiple configs
 # - multiple platforms
@@ -80,6 +81,7 @@ def RunVSWhere():
 		Path = "\"%s\\Microsoft Visual Studio\\Installer\\vswhere.exe\"" % (ProgramFilesx84);
 		print(Path)
 		Process = subprocess.Popen(Path, stdout=subprocess.PIPE)
+		time.sleep(3)
 		out, err = Process.communicate()
 		lines = out.splitlines()
 		# Process = subprocess.run(Path, stdout=subprocess.PIPE, text=True)
