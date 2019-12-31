@@ -4,10 +4,6 @@ os:
   - windows
 compiler:
   - clang
-matrix:
-  exclude:
-    - os: windows
-      compiler: clang
 language: cpp
 script: ./travis/build
 
