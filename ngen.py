@@ -10,7 +10,6 @@ import shlex
 # - multiple platforms
 #   .win32 suffix for commands
 #   _win32 suffix for dirs & files
-print("NY NGEN!!")
 
 cpps = set()
 mms = set()
@@ -22,14 +21,16 @@ objraw = set()
 target = ""
 targets = set()
 paramz = {};
-print("plat " + sys.platform + " os " + os.name)
+
 
 g_platform = sys.platform
+
 if g_platform == "darwin":
 	g_platform = "osx"
 
 if g_platform == "linux2":
 	g_platform = "linux"
+
 g_win32sdk = ""
 g_win32InstallationPath = ""
 g_win32VersionPath = ""
@@ -72,14 +73,6 @@ def SplitCommand(c):
 def PlatformMatch(p):
 	return p == "" or p == g_platform
 
-SplitPath("//food/sdf\\fisk_win32")
-SplitPath("//food/sdf\\fisk.txt")
-SplitPath("//food/sdf\\fisk_win32.txt")
-SplitCommand(".fisk")
-SplitCommand(".fisk.osx")
-SplitCommand(".fisk.win32sd")
-SplitCommand(".fisk.linux")
-
 
 def RunVSWhere():
 	Result = {}
@@ -91,11 +84,8 @@ def RunVSWhere():
 		out, err = Process.communicate()
 		Process.wait()
 		lines = out.splitlines()
-		# Process = subprocess.run(Path, stdout=subprocess.PIPE, text=True)
-		# lines = Process.stdout.split("\n")
 		for line in lines:
 			l = line.decode('utf-8')
-			print("Line " + l)
 			l = l.strip()
 			idx = l.find(":")
 			if idx > 0:
@@ -123,7 +113,6 @@ def ProcessPath(d):
 	abspth = os.path.abspath(d)
 	extension, platform = SplitPath(abspth)
 	if PlatformMatch(platform):
-		print("Process Path " + abspth)
 		if not abspth in paths_processed:
 			paths_processed.add(abspth)
 			for filename in os.listdir(abspth):
@@ -156,7 +145,7 @@ def fixname(name, ext):
 	return objname, name
 
 def AddParam(Param, V):
-	print("--> '" + Param + "' '" + V +"'")
+	#print("--> '" + Param + "' '" + V +"'")
 	value = paramz.get(Param, "");
 	l1 = value
 	value = value + " " + V;
@@ -165,13 +154,7 @@ def AddParam(Param, V):
 def AddToEnv(Name, Value):
 	Current = os.environ[Name]
 	New = Current + "" + Value
-	print(" CUR : " + Current)
-	print(" NEW : " + New)
 	os.environ[Name] = New
-	print(" NEW : " + os.environ[Name])
-
-
-
 
 with open("ngen.cfg") as f:
 	for line in f:
@@ -182,7 +165,6 @@ with open("ngen.cfg") as f:
 				idx = command.find(' ')
 				arg = command[idx+1:].strip()
 				command = command[:idx]
-				print("COMMAND!! " + command)
 				if command == "win32sdk":
 					if g_platform == "win32":
 						g_win32sdk = arg
