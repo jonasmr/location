@@ -4,6 +4,7 @@ import re
 import sys
 import subprocess
 import time
+import shlex
 # - multiple targets
 # - multiple configs
 # - multiple platforms
@@ -78,10 +79,10 @@ def RunVSWhere():
 	Result = {}
 	if g_platform == "win32":
 		ProgramFilesx84 = os.getenv("ProgramFiles(x86)");
-		Path = "\"%s\\Microsoft Visual Studio\\Installer\\vswhere.exe\"" % (ProgramFilesx84);
-		print(Path)
-		Process = subprocess.Popen(Path, stdout=subprocess.PIPE)
-		time.sleep(3)
+		Path = "\"%s\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -version 15" % (ProgramFilesx84);
+		print(shlex.split(Path))
+		Process = subprocess.Popen(args=shlex.split(Path), stdout=subprocess.PIPE)
+		Process.wait()
 		out, err = Process.communicate()
 		lines = out.splitlines()
 		# Process = subprocess.run(Path, stdout=subprocess.PIPE, text=True)
