@@ -2,4 +2,6 @@
 set -ev
 python --version
 python ngen.py
-./travis/ninja
+if [[ "$TRAVIS_OS_NAME" = "windows" ]] ; then ./travis/ninja.exe fi
+if [[ "$TRAVIS_OS_NAME" = "osx" ]] ; then ./travis/ninja_osx fi
+if [[ "$TRAVIS_OS_NAME" = "linux" ]] ; then ./travis/ninja_linux fi
