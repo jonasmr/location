@@ -27,6 +27,9 @@ print("plat " + sys.platform + " os " + os.name)
 g_platform = sys.platform
 if g_platform == "darwin":
 	g_platform = "osx"
+
+if g_platform == "linux2":
+	g_platform = "linux"
 g_win32sdk = ""
 g_win32InstallationPath = ""
 g_win32VersionPath = ""
@@ -108,6 +111,9 @@ if g_platform == "win32":
 	with open(g_win32VersionPath) as f:
 		g_win32VCVersionNumber = ''.join(f.read().split())
 
+
+
+
 g_win32CLPath = "%s\\VC\\Tools\\MSVC\\%s\\bin\\HostX64\\x64\\cl.exe" % (g_win32InstallationPath, g_win32VCVersionNumber)
 g_win32LinkPath = "%s\\VC\\Tools\\MSVC\\%s\\bin\\HostX64\\x64\\link.exe" % (g_win32InstallationPath, g_win32VCVersionNumber)
 g_win32VCPath = "%s\\VC\\Tools\\MSVC\\%s" % (g_win32InstallationPath, g_win32VCVersionNumber)
@@ -155,7 +161,15 @@ def AddParam(Param, V):
 	l1 = value
 	value = value + " " + V;
 	paramz[Param] = value;
-	
+
+def AddToEnv(Name, Value):
+	Current = os.environ[Name]
+	New = Current + "" + Value
+	print(" CUR : " + Current)
+	print(" NEW : " + New)
+	os.environ[Name] = New
+	print(" NEW : " + os.environ[Name])
+
 
 
 
@@ -216,7 +230,7 @@ with open("build.ninja", "w") as f:
 		f.write( "%s = %s\n\n" % (key.strip(), value.strip()))
 		print( "%s = %s" % (key.strip(), value.strip()))
 
-	if g_platform == "osx":
+	if g_platform == "osx" or g_platform == "linux":
 		f.write("""rule cxx
   command = $cxx -MMD -MT $out -MF $out.d $cflags -c $in -o $out
   description = CXX $out
