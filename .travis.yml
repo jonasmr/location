@@ -3,7 +3,6 @@ os:
   - osx
   - windows
 compiler:
-  - gcc
   - clang
 matrix:
   exclude:
