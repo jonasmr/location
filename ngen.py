@@ -10,6 +10,7 @@ import shlex
 # - multiple platforms
 #   .win32 suffix for commands
 #   _win32 suffix for dirs & files
+print("NY NGEN!!")
 
 cpps = set()
 mms = set()
@@ -24,6 +25,8 @@ paramz = {};
 print("plat " + sys.platform + " os " + os.name)
 
 g_platform = sys.platform
+if g_platform == "darwin":
+	g_platform = "osx"
 g_win32sdk = ""
 g_win32InstallationPath = ""
 g_win32VersionPath = ""
