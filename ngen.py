@@ -10,17 +10,64 @@ import shlex
 # - multiple platforms
 #   .win32 suffix for commands
 #   _win32 suffix for dirs & files
+configs = {}
+platforms = {"win32":1, "linux":1, "osx":1}
+default_config = ""
 
-cpps = set()
-mms = set()
-cs = set()
-asms = set()
-objs = set()
-metals = set()
-objraw = set()
-target = ""
-targets = set()
-paramz = {};
+class Config:
+	def __init__(self, name):
+		self.extension = ""
+		self.name = name
+		self.cpps = set()
+		self.mms = set()
+		self.cs = set()
+		self.asms = set()
+		self.objs = set()
+		self.metals = set()
+		self.objraw = set()
+		self.target = ""
+		self.targets = set()
+		self.paramz = {}
+
+
+
+
+configs["__default"] = Config("__default")
+
+
+def GetConfig(s):
+	if s == "":
+		s = "__default";
+	return configs[s];
+
+
+
+def MergeConfigs():
+	default = configs["__default"]
+	for cfg_name in configs:
+		if cfg_name != "__default":
+			cfg = configs[cfg_name]
+			cfg.cpps = cfg.cpps | default.cpps
+			cfg.mms = cfg.mms | default.mms
+			cfg.cs = cfg.cs | default.cs
+			cfg.asms = cfg.asms | default.asms
+			cfg.objs = cfg.objs | default.objs
+			cfg.metals = cfg.metals | default.metals
+			cfg.objraw = cfg.objraw | default.objraw
+			cfg.target = default.target
+			# for k in default.paramz:
+			# 	v0 = default.paramz.get(k, "")
+			# 	v1 = cfg.paramz.get(k, "")
+			# 	cfg.paramz[k] = v1 + " " + v0
+
+def GetTargetName(cfg):
+	ext = ""
+	if g_platform == "win32":
+		ext = ".exe"
+	if cfg.name != default_config:
+		return "%s.%s%s" % (cfg.target, cfg.name, ext)
+	else:
+		return "%s%s" % (cfg.target, ext)
 
 
 g_platform = sys.platform
@@ -40,6 +87,7 @@ g_win32sdkLib = ""
 g_win32CLPath = "";
 g_win32LinkPath = "";
 g_win32VCPath = ""
+
 
 
 paths_processed = set()
@@ -68,6 +116,23 @@ def SplitCommand(c):
 		command = c[:idx_platform];
 	#print("Split Command '%s' :: c '%s' plat '%s'" % (c, command, platform))
 	return command, platform;
+
+def SplitCommand3(c):
+	platform = ""
+	config = ""
+	c1 = ""
+	command, c0 = SplitCommand(c)
+	if c0 != "":
+		command, c1 = SplitCommand(command)
+	if c0 in platforms:
+		platform = c0
+	if c0 in configs:
+		config = c0
+	if c1 in platforms:
+		platform = c1
+	if c1 in configs:
+		config = c1
+	return command, platform, config
 
 
 def PlatformMatch(p):
@@ -109,7 +174,7 @@ g_win32LinkPath = "%s\\VC\\Tools\\MSVC\\%s\\bin\\HostX64\\x64\\link.exe" % (g_wi
 g_win32VCPath = "%s\\VC\\Tools\\MSVC\\%s" % (g_win32InstallationPath, g_win32VCVersionNumber)
 
 
-def ProcessPath(d):
+def ProcessPath(d, cfg):
 	abspth = os.path.abspath(d)
 	extension, platform = SplitPath(abspth)
 	if PlatformMatch(platform):
@@ -120,36 +185,37 @@ def ProcessPath(d):
 				extension, platform = SplitPath(p)
 				if PlatformMatch(platform):
 					if extension == "cpp":
-						cpps.add(p)
+						cfg.cpps.add(p)
 						print("cpp " + p)
 					if extension == "mm":
-						mms.add(p)
+						cfg.mms.add(p)
 						print("mm " + p)
 					if extension == "metal":
-						metals.add(p)
+						cfg.metals.add(p)
 						print("metal " + p)
 					if extension == "s":
-						asms.add(p)
+						cfg.asms.add(p)
 						print("asm " + p)
 
 
-def fixname(name, ext):
+def fixname(name, ext, cfg):
 	rawbase = os.path.basename(name)[:-len(ext)]
 	raw = rawbase
 	idx = 0
-	while raw in objraw:
+	while raw in cfg.objraw:
 		raw = "%s_%d" %(rawbase, idx)
 		idx = idx + 1
-	objraw.add(raw)
-	objname = "$builddir/" + raw
+	cfg.objraw.add(raw)
+	objname = "$builddir/" + cfg.name + "/" + raw
 	return objname, name
 
-def AddParam(Param, V):
+def AddParam(Param, V, config = ""):
 	#print("--> '" + Param + "' '" + V +"'")
-	value = paramz.get(Param, "");
+	cfg = GetConfig(config)
+	value = cfg.paramz.get(Param, "");
 	l1 = value
-	value = value + " " + V;
-	paramz[Param] = value;
+	value = value.strip() + " " + V;
+	cfg.paramz[Param] = value;
 
 def AddToEnv(Name, Value):
 	Current = os.environ[Name]
@@ -160,31 +226,41 @@ with open("ngen.cfg") as f:
 	for line in f:
 		line = line.strip()
 		if len(line) > 0 and line[0] != '#':
-			if(line[0] == '.'):
-				command = line[1:].strip()
-				idx = command.find(' ')
-				arg = command[idx+1:].strip()
-				command = command[:idx]
+			IsCommand = line[0] == '.'
+			if IsCommand:
+				line = line[1:].strip()
+			idx = line.find(' ')
+			if idx < 1:
+				continue
+			command = line[:idx].strip()
+			arg = line[idx+1:].strip()
+			command, platform, config = SplitCommand3(command);
+			cfg = GetConfig(config)
+			print(" COMMAND ('%s' '%s' '%s') --> %s" % (command, platform, config, arg))
+			if IsCommand:
+				if command == "config":
+					print("!! Config " + arg)
+					configs[arg] = Config(arg)
+					if default_config == "":
+						default_config = arg
+						print("default config is now " + default_config)
 				if command == "win32sdk":
 					if g_platform == "win32":
 						g_win32sdk = arg
 						print("win32 SDK: " + g_win32sdk)
 				if(command == "dir"):
-					ProcessPath(arg)
+					ProcessPath(arg, cfg)
 				if(command == "target"):
-					target = arg.strip()
-					if g_platform == "win32":
-						target = target + ".exe"
-					targets.add(target)
+					cfg.target = arg.strip();
+					print("CFG TARGET IS " + cfg.target);
+					cfg.targets.add(cfg.target)
 			else:
-				idx = re.search(r'[ =]', line).start()
-				i = line.find('=')
-				if i > 0:
-					l0 = line[:i].strip()
-					l1 = line[i+1:].strip()
-					l0, platform = SplitCommand(l0)					
-					if PlatformMatch(platform):
-						AddParam(l0, l1);
+				l0 = command
+				l1 = arg
+				if PlatformMatch(platform):
+					AddParam(l0, l1, config);
+					if config != "":
+						AddParam(l0, "")
 
 
 if g_win32sdk != "":
@@ -199,67 +275,87 @@ if g_win32sdk != "":
 	AddParam("ldflags", "/LIBPATH:\"%s\\um\\x64\"" % g_win32sdkLib);
 	AddParam("ldflags", "/LIBPATH:\"%s\\lib\\x64\"" % g_win32VCPath)
 
+
+MergeConfigs()
+
+
+def AddRule(f, str):
+	for cfg_name in configs:
+		if cfg_name != "__default":
+			f.write(str.replace("%%", cfg_name))
+
 with open("build.ninja", "w") as f:
+	f.write("\n# Generated by ngen.py\n\n")
 	if g_platform == "win32":
-		f.write("cxx = " + g_win32CLPath + "\n")
+		f.write("cxx = " + g_win32CLPath + "\n\n")
 	else:
-		f.write("cxx = clang++\n")
+		f.write("cxx = clang++\n\n")
+	f.write("builddir = build\n\n")
 	
 	if g_platform == "win32":
 		f.write("link = " + g_win32LinkPath + "\n")
 
-	for key,value in paramz.items():
-		f.write( "%s = %s\n\n" % (key.strip(), value.strip()))
-		print( "%s = %s" % (key.strip(), value.strip()))
+	for cfg_name in configs:
+		suffix = "";
+		# if cfg_name != "__default":
+		# 	suffix = "." + cfg_name
+		cfg = configs[cfg_name]
+		for key in configs["__default"].paramz.keys():
+			value = cfg.paramz.get(key, "")
+			if cfg_name != "__default":
+				f.write( "%s_%s = $%s %s\n" % (key.strip(), cfg_name, key.strip(), value.strip()))
+			else:
+				f.write( "%s = %s\n" % (key.strip(), value.strip()))
+		f.write("\n")
 
 	if g_platform == "osx" or g_platform == "linux":
-		f.write("""rule cxx
-  command = $cxx -MMD -MT $out -MF $out.d $cflags -c $in -o $out
+		AddRule(f, """rule cxx_%%
+  command = $cxx -MMD -MT $out -MF $out.d $cflags_%% -c $in -o $out
   description = CXX $out
   depfile = $out.d
   deps = gcc
 
 """)
 
-		f.write("""rule asm
+		AddRule(f, """rule asm_%%
   command = as -masm=intel $in -o $out
   description = ASM $out
 
 """)
 
-		f.write("""rule mxx
-  command = $cxx -MMD -MT $out -MF $out.d $cflags $mmflags -c $in -o $out
+		AddRule(f, """rule mxx_%%
+  command = $cxx -MMD -MT $out -MF $out.d $cflags_%% $mmflags_%% -c $in -o $out
   description = CXX $out
   depfile = $out.d
   deps = gcc
 
 """)
 
-		f.write("""rule link
-  command = $cxx $ldflags -o $out $in $libs
+		AddRule(f, """rule link_%%
+  command = $cxx $ldflags_%% -o $out $in $libs
   description = LINK $out
 
 """)
-		f.write("""rule metal
+		AddRule(f, """rule metal_%%
   command = xcrun -sdk macosx metal $in -o $out 
   description = METAL $out
 
 """)
 
-		f.write("""rule metallib
+		AddRule(f, """rule metallib_%%
   command = xcrun -sdk macosx metallib $in -o $out 
   description = METAL $out
 
 """)
 	elif g_platform == "win32":
-		f.write("""rule cxx
-  command = $cxx /showIncludes /c $in /Fo$out $cflags
+		AddRule(f, """rule cxx_%%
+  command = $cxx /showIncludes /c $in /Fo$out $cflags_%%
   description = CXX $out
   depfile = $out.d
   deps = msvc
 
 """)
-		f.write("""rule link
+		AddRule(f, """rule link
   command = $link $ldflags /OUT:$out $in $libs
   description = LINK $out
 
@@ -270,41 +366,59 @@ with open("build.ninja", "w") as f:
 
 """)
 
+	for cfg_name in configs:
+		if cfg_name != "__default":
+			cfg = configs[cfg_name]
+			for v in cfg.cpps:
+				objname, fullname = fixname(v, ".cpp", cfg)
+				cfg.objs.add(objname+".o")
+				f.write("build %s: cxx_%s %s\n" % (objname+".o", cfg_name, fullname))
+			for v in cfg.mms:
+				objname, fullname = fixname(v, ".mm", cfg)
+				cfg.objs.add(objname+".o")
+				f.write("build %s: mxx_%s %s\n" % (objname+".o", cfg_name, fullname))
 
-	for v in cpps:
-		objname, fullname = fixname(v, ".cpp")
-		objs.add(objname+".o")
-		f.write("build %s: cxx %s\n" % (objname+".o", fullname))
-	for v in mms:
-		objname, fullname = fixname(v, ".mm")
-		objs.add(objname+".o")
-		f.write("build %s: mxx %s\n" % (objname+".o", fullname))
+			for v in cfg.asms:
+				objname, fullname = fixname(v, ".s", cfg)
+				cfg.objs.add(objname+".o")
+				f.write("build %s: asm_%s %s\n" % (objname+".o", cfg_name, fullname))
 
-	for v in asms:
-		objname, fullname = fixname(v, ".s")
-		objs.add(objname+".o")
-		f.write("build %s: asm %s\n" % (objname+".o", fullname))
+			for v in cfg.metals:
+				objname, fullname = fixname(v, ".metal", cfg)
+				f.write("build %s: metal_%s %s\n" % (objname+".air", cfg_name, fullname))
+				f.write("build %s: metallib_%s %s\n" % (objname+".metallib", cfg_name, objname+".air"))
+				cfg.targets.add(objname+".metallib")
+			ext = ""
 
-	for v in metals:
-		objname, fullname = fixname(v, ".metal")
-		f.write("build %s: metal %s\n" % (objname+".air", fullname))
-		f.write("build %s: metallib %s\n" % (objname+".metallib", objname+".air"))
-		targets.add(objname+".metallib")
-
-
-	f.write("build %s: link" %(target))
-	for obj in objs:
-		f.write(" " + obj)
-	f.write("\n\n")
+			if g_platform == "win32":
+				ext = ".exe"
+			f.write("build %s: link_%s" % (GetTargetName(cfg), cfg_name))
+			for obj in cfg.objs:
+				f.write(" " + obj)
+			f.write("\n\n")
 
 	f.write("build build.ninja: ngen ngen.cfg\n\n");
 
+	f.write("default build.ninja %s\n\n" % GetTargetName(configs[default_config]));
 
-	f.write("default build.ninja " );
-	for s in targets:
-		f.write(" " + s)
+	for cfg_name in configs:
+		if cfg_name != "__default":
+			cfg = configs[cfg_name];
+			f.write("build %s: phony %s\n" % (cfg_name, GetTargetName(cfg)))
+
+
+
+	f.write("build all: phony ");
+	for cfg_name in configs:
+		if cfg_name != "__default":
+			cfg = configs[cfg_name];
+			f.write("%s " % GetTargetName(cfg));
+
 	f.write("\n\n")
 
 
+# build release: phony location_test.release
+# build debug: phony location_test
+# build all: phony location_test location_test.release
 
 
