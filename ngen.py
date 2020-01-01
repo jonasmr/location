@@ -358,7 +358,7 @@ with open("build.ninja", "w") as f:
   deps = msvc
 
 """)
-		AddRule(f, """rule link
+		AddRule(f, """rule link_%%
   command = $link $ldflags /OUT:$out $in $libs
   description = LINK $out
 
