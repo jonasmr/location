@@ -139,11 +139,11 @@ def PlatformMatch(p):
 	return p == "" or p == g_platform
 
 
-def RunVSWhere():
+def RunVSWhere(ExtraArgs):
 	Result = {}
 	if g_platform == "win32":
 		ProgramFilesx84 = os.getenv("ProgramFiles(x86)");
-		Path = "\"%s\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -products 'Microsoft.VisualStudio.Product.BuildTools'" % (ProgramFilesx84);
+		Path = "\"%s\\Microsoft Visual Studio\\Installer\\vswhere.exe\"%s" % (ProgramFilesx84, ExtraArgs);
 		print(shlex.split(Path))
 		Process = subprocess.Popen(args=shlex.split(Path), stdout=subprocess.PIPE)
 		out, err = Process.communicate()
@@ -159,8 +159,11 @@ def RunVSWhere():
 				Result[key] = value
 	return Result;
 
-g_vswhere = RunVSWhere()
+g_vswhere = {}
 if g_platform == "win32":
+	g_vswhere = RunVSWhere(" -products 'Microsoft.VisualStudio.Product.BuildTools'")
+	if not "installationPath" in g_vswhere:
+		g_vswhere = RunVSWhere("")
 	g_win32InstallationPath = g_vswhere["installationPath"]
 	g_win32VersionPath = "%s\\VC\\Auxiliary\\Build\\Microsoft.VCToolsVersion.default.txt" % g_win32InstallationPath
 	with open(g_win32VersionPath) as f:
