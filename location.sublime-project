@@ -15,12 +15,12 @@
     	{
     		"name":"default_ninja",
     		"osx" : {
-						"shell_cmd": "ninja",
+						"shell_cmd": "./ninja_osx",
 						"file_regex": "(...*?):([0-9]*):([0-9]*):",
 						"working_dir": "${project_path}"
 					},
     		"windows" : {
-						"shell_cmd": "ninja",
+						"shell_cmd": "ninja.exe",
 						"file_regex": "(...*?)\\(([0-9]*)\\):",
 						"working_dir": "${project_path}"
 					}					

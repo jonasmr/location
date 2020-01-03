@@ -5,11 +5,15 @@ import sys
 import subprocess
 import time
 import shlex
-# - multiple targets
-# - multiple configs
-# - multiple platforms
-#   .win32 suffix for commands
-#   _win32 suffix for dirs & files
+
+#   - multiple targets
+# * - multiple configs
+#   - multiple platforms
+#   - .win32 suffix for commands
+# * - _win32 suffix for dirs
+#   - _win32 suffix for files
+#   - recursive .dirs
+
 configs = {}
 platforms = {"win32":1, "linux":1, "osx":1}
 default_config = ""
@@ -55,10 +59,6 @@ def MergeConfigs():
 			cfg.metals = cfg.metals | default.metals
 			cfg.objraw = cfg.objraw | default.objraw
 			cfg.target = default.target
-			# for k in default.paramz:
-			# 	v0 = default.paramz.get(k, "")
-			# 	v1 = cfg.paramz.get(k, "")
-			# 	cfg.paramz[k] = v1 + " " + v0
 
 def GetTargetName(cfg):
 	ext = ""
@@ -121,9 +121,15 @@ def SplitCommand3(c):
 	platform = ""
 	config = ""
 	c1 = ""
+	# print("splitting %s " %c)
 	command, c0 = SplitCommand(c)
+	# print("xxxxx%s %s" % (command, c0))
 	if c0 != "":
 		command, c1 = SplitCommand(command)
+		# print("xxxxspl x%s %s" % (command, c1))
+	# print("FINAL  (%s::%s::%s) " %(command, c1, c0))
+	# for cc in configs:
+		# print("cfg " + cc)
 	if c0 in platforms:
 		platform = c0
 	if c0 in configs:
@@ -132,6 +138,7 @@ def SplitCommand3(c):
 		platform = c1
 	if c1 in configs:
 		config = c1
+	# print("xxsplit (%s::%s::%s) " %(command, platform, config))
 	return command, platform, config
 
 
@@ -213,7 +220,6 @@ def fixname(name, ext, cfg):
 	return objname, name
 
 def AddParam(Param, V, config = ""):
-	#print("--> '" + Param + "' '" + V +"'")
 	cfg = GetConfig(config)
 	value = cfg.paramz.get(Param, "");
 	l1 = value
@@ -229,14 +235,21 @@ with open("ngen.cfg") as f:
 	for line in f:
 		line = line.strip()
 		if len(line) > 0 and line[0] != '#':
+			
+
 			IsCommand = line[0] == '.'
 			if IsCommand:
 				line = line[1:].strip()
-			idx = line.find(' ')
-			if idx < 1:
+			r = re.search(r'([ \t])', line)
+			if r:
+				idx = r.end()
+			else:
+				print("skip")
 				continue
+			# 
 			command = line[:idx].strip()
-			arg = line[idx+1:].strip()
+			arg = line[idx:].strip()
+			# print( "line %d : %s  CC %s" %(idx, line, command))
 			command, platform, config = SplitCommand3(command);
 			cfg = GetConfig(config)
 			print(" COMMAND ('%s' '%s' '%s') --> %s" % (command, platform, config, arg))
@@ -260,7 +273,9 @@ with open("ngen.cfg") as f:
 			else:
 				l0 = command
 				l1 = arg
+				# print("ppp param '%s' '%s' '%s'" % (l0, l1, config))
 				if PlatformMatch(platform):
+					# print("aprint("xxsplit (%s::%s::%s) " %(command, platform, config))dd param '%s' '%s' '%s'" % (l0, l1, config))
 					AddParam(l0, l1, config);
 					if config != "":
 						AddParam(l0, "")
@@ -280,6 +295,10 @@ if g_win32sdk != "":
 
 
 MergeConfigs()
+
+if default_config == "":
+	print("default config missing. please specify a config with .config")
+	exit(1)
 
 
 def AddRule(f, str):
@@ -359,7 +378,7 @@ with open("build.ninja", "w") as f:
 
 """)
 		AddRule(f, """rule link_%%
-  command = $link $ldflags /OUT:$out $in $libs
+  command = $link $ldflags_%% /OUT:$out $in $libs
   description = LINK $out
 
 """)
@@ -376,6 +395,7 @@ with open("build.ninja", "w") as f:
 				objname, fullname = fixname(v, ".cpp", cfg)
 				cfg.objs.add(objname+".o")
 				f.write("build %s: cxx_%s %s\n" % (objname+".o", cfg_name, fullname))
+
 			for v in cfg.mms:
 				objname, fullname = fixname(v, ".mm", cfg)
 				cfg.objs.add(objname+".o")
@@ -418,10 +438,3 @@ with open("build.ninja", "w") as f:
 			f.write("%s " % GetTargetName(cfg));
 
 	f.write("\n\n")
-
-
-# build release: phony location_test.release
-# build debug: phony location_test
-# build all: phony location_test location_test.release
-
-
