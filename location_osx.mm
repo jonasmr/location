@@ -6,9 +6,11 @@ static void LocationProcessLocation(double Latitude, double Longitude, double Al
 @interface LocationWrapper : NSObject <CLLocationManagerDelegate>
 {
 	NSUInteger DebugTrace;
+	NSInteger WasEnabled;
 }
 @property(nonatomic, readwrite, retain) CLLocationManager* LocationManager;
 @property(nonatomic, readwrite) NSUInteger DebugTrace;
+@property(nonatomic, readwrite) NSInteger WasEnabled;
 @end
 
 @implementation LocationWrapper
@@ -21,11 +23,19 @@ static void LocationProcessLocation(double Latitude, double Longitude, double Al
 
 	if([CLLocationManager locationServicesEnabled])
 	{
-		NSLog(@"**LOCCATION**: Location Services enabled");
+		if(WasEnabled != 1)
+		{
+			NSLog(@"**LOCCATION**: Location Services enabled");
+		}
+		WasEnabled = 1;
 	}
 	else
 	{
-		NSLog(@"**LOCCATION**: Location Services not enabled");
+		if(WasEnabled != 0)
+		{
+			NSLog(@"**LOCCATION**: Location Services not enabled");
+		}
+		WasEnabled = 0;
 	}
 }
 
