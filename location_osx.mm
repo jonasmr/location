@@ -15,6 +15,7 @@ static void LocationProcessLocation(double Latitude, double Longitude, double Al
 
 @implementation LocationWrapper
 @synthesize DebugTrace;
+@synthesize WasEnabled;
 
 - (void)debug_print
 {
