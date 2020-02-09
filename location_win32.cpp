@@ -138,7 +138,7 @@ static void LocationProcessLocation(double Latitude, double Longitude, double Al
 
 uint32_t LocationStart(uint32_t Flags)
 {
-	// ZASSERT(!Running);
+	ZASSERT(!Running);
 	// State.Flags = Flags;
 
 	// NSUInteger Trace = Flags & ELOC_DEBUG_TRACE ? 1 : 0;
@@ -146,7 +146,7 @@ uint32_t LocationStart(uint32_t Flags)
 	// State.Wrapper = [[LocationWrapper alloc] init];
 	// [State.Wrapper start:Trace];
 	// [State.Wrapper retain];
-	// Running = 1;
+	Running = 1;
 	return 0;
 }
 void LocationStop()
@@ -157,7 +157,7 @@ void LocationStop()
 	// [State.Wrapper release];
 	// [State.Wrapper dealloc];
 	// State.Wrapper = 0;
-	Running = 1;
+	Running = 0;
 }
 uint32_t LocationDrain(SLocationInfo* pLocationInfo, uint32_t NumLocationInfo, uint32_t Flags)
 {
