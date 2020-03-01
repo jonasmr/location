@@ -146,7 +146,7 @@ uint32_t LocationStart(uint32_t Flags)
 	// State.Wrapper = [[LocationWrapper alloc] init];
 	// [State.Wrapper start:Trace];
 	// [State.Wrapper retain];
-	// Running = 1;
+	Running = 1;
 	return 0;
 }
 void LocationStop()
